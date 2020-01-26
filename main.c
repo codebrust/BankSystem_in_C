@@ -15,7 +15,7 @@ void delete_account();	 // 7.  Account Delete Control Module
 void modify_account();	 // 8.  Account Type Modification Control Module
 void changeId();		 // 9.  Access Control Setting Module
 
-void accountMenu(int i); // 10. To Display Account Information List
+// void accountMenu(int i); // 10. To Display Account Information List
 int	checkAmount(int x);		 // 11. Balance & Amount Checking Module
 void modifyThis(char option[5]);			// 12. Account Modification Module
 void searchControl(char *ch, char t[30]);	//  5. Search Control and Display Module
@@ -23,9 +23,12 @@ void getinput(char o[10], char *data);		// 14. Input Control Mechanism Module
 void cs_id(char o[10],char *u,char *p);		// 15. Access Setting Storage & Scan Module
 int search(char *acnos, char *names);		// 16. Account Searching Module
 
-char* userfilelocation(); //
-char* accountfilelocation(); //
-char* transacfilelocation(); //
+char* userfilelocation();
+char* accountfilelocation();
+char* transacfilelocation();
+char* tempfilelocation();
+
+void userRegister();
 //}
 char spc[5]=" ";	//	Cleaner String
 typedef struct		//	Data Structure Used in Program
@@ -150,8 +153,8 @@ void modifyThis(char option[5])
 	}while(1==1);
 	fclose(fp);
 	fclose(fpx);
-	remove("C:/Users/Public/bmsdata.bms");
-	rename("C:/Users/Public/temp.bms","C:/Users/Public/bmsdata.bms");
+	remove(accountfilelocation());
+	rename(tempfilelocation(),accountfilelocation());
 }
 //~~~~~~~~~~~~~~~~	14. Deposit And Withdraw Control Module 	~~~~~~~~~~~~~~~~~~
 void dw(char title[30])
@@ -221,7 +224,7 @@ int search(char *acnos, char *names)
 	FILE *fp;
 	char ch;
 	int a=0;
-	fp=fopen("C:/Users/Public/bmsdata.bms","r");
+	fp=fopen(accountfilelocation(),"r");
 	do
 	{	ch=fscanf(fp,"%s %s %s %s %s",s[a].acno,s[a].name,s[a].snm,s[a].type,s[a].balance);
 		if(ch==EOF) break;
@@ -328,7 +331,7 @@ void display_all()
 	char ch, fch;
 	FILE *fp;
 
-    fp=fopen("C:/Users/Public/bmsdata.bms","r");
+    fp=fopen(accountfilelocation(),"r");
 
     do
     {
@@ -442,7 +445,7 @@ void create_ac()
 		if(ac.balance[0]=='\0') break;
 		else if (ch=='y'||ch=='Y')
 		{	printf("\n\n\t\t\tAccount Created");
-			fp = fopen("C:/Users/Public/bmsdata.bms","a");
+			fp = fopen(accountfilelocation(),"a");
 			fprintf(fp, "%s %s %s %s %s ", ac.acno, ac.name, ac.snm, ac.type, ac.balance);
 			fclose(fp);
 		}
@@ -451,26 +454,15 @@ void create_ac()
 		ch=getch();
 	}while((ch=='Y'||ch=='y')||a>0);
 }
-//~~~~~~~~~~~~~~~~	7. Account Detail Information List 	~~~~~~~~~~~~~~~~~~
-void accountMenu( int i)
-{
-	int a=1;
- system("cls");
-	printf("\n\n\t   %d.	Account Number		:",a++);
-	printf("\n\n\t   %d.	A/C Holder's Name 	:",a++);
-	if(i==1)
-	printf("\n\n\t   %d.	A/C Holder's Surname	:",a++);
-	printf("\n\n\t   %d.	Account Type 		:",a++);
-	printf("\n\n\t   %d.	Balance Amount	 	:",a++);
 
-	printf("\n\nESC : Main Menu");
-}
+// 	printf("\n\nESC : Main Menu");
+// }
 //~~~~~~~~~~~~~~~~	6. Access Control Setting Module	~~~~~~~~~~~~~~
 void changeId()
 {
 char ch='1';
-char username[30]="user", inuser[30],temp[30];
-char password[30]="pass", inpass[30];
+char username[30]="admin", inuser[30],temp[30];
+char password[30]="admin", inpass[30];
 do
 	{
  system("cls");
@@ -582,31 +574,8 @@ void cs_id(char option[10], char *username, char *password)
 	fprintf(fp,"%s %s",username,password);
 	fclose(fp);
 	}
-/*
-	if(strcmp(option,"change")==0)
-		{
-			fp = fopen("C:/Users/Public/bms.bms","w");
-			fprintf(fp,"%s %s",username,password);
-			fclose(fp);
-		}
-	else
-		{
-			fp = fopen("C:/Users/Public/bms.bms","r");
-			if(fp==NULL)
-				{
-
-					printf("\n\nFirst Run:  Default User : %s Password : %s",username,password);
-					fp = fopen("C:/Users/Public/bms.bms","w");
-					fprintf(fp,"%s %s",username,password);
-					fclose(fp);
-				}
-			else
-				{
-					fscanf(fp,"%s %s",username,password);
-					fclose(fp);
-				}
-		} */
 }
+
 //~~~~~~~~~~~~~~~~	4. Input Control Mechanism Module	~~~~~~~~~~~~~~
 void getinput(char option[10], char *data)
 {
@@ -631,7 +600,7 @@ void getinput(char option[10], char *data)
 					printf("%c%c%c",8,32,8);
 					i-=2;
 				 }		//	TAB and Esc does nothing If Password and Username
-			  else if(((strcmp(option,"password")==0)||(strcmp(option,"user")==0))&&(temp==9||temp==27))
+			  else if(((strcmp(option,"password")==0)||(strcmp(option,"user")==0))&&(temp==9))
 			  i--;
 			  else if(temp==27) break;
 			  else if(temp==9||temp==13) break;	// Action of TaB and Enter
@@ -664,45 +633,57 @@ void authentication()
 	char password[30]="pass";		// Actual & Default Password at first run
 	char inuser[30], inpass[30];	// Username & Password received from input
 	int attempts;
+	int auth = 0;
 
 	cs_id("scan",username,password);	//	Scan Username and Password from file
 
-	for(attempts=5;attempts>0;attempts--)
-	{	// To erase the previous inputs
-		system("cls");
-		printf("\n\n\n\n\t\t\t  WEL-COME TO");
-		printf("\n\n\t\t\tBANK MANAGEMENT");
-		printf("\n\n\t\t\t    SYSTEM");
+	do{
 
-		if(attempts<5)
-        {
-            printf("\n\n\n\tAccess Denied. Re-enter Username and Password.");
-			printf("\n\t            Attempts Left: %i"    ,attempts);
+		for(attempts=5;attempts>0;attempts--)
+		{	// To erase the previous inputs
+			system("cls");
+			printf("\n\t\t\t\t\t\t\t  Press ESC To Register");
+			printf("\n\n\n\t\t\t  WEL-COME TO");
+			printf("\n\n\t\t\tBANK MANAGEMENT");
+			printf("\n\n\t\t\t    SYSTEM");
 
-        }
-        else printf("\n\n\n\n");
+			if(attempts<5)
+			{
+				printf("\n\n\n\tAccess Denied. Re-enter Username and Password.");
+				printf("\n\t            Attempts Left: %i"    ,attempts);
 
-		// getinput is userdefined input module
-        printf("\n\n\n\n\n\t\t\tUsername: ");
-		getinput("user",inuser);
-		printf("\n\n\t\t\tPassword: ");
-		getinput("password",inpass);
+			}
+			else printf("\n\n\n\n");
+
+			// getinput is userdefined input module
+			printf("\n\n\n\n\n\t\t\tUsername: ");
+			getinput("user",inuser);
+			if(inuser[0]=='\0') break;	
+			printf("\n\n\t\t\tPassword: ");
+			getinput("password",inpass);
+			if(inpass[0]=='\0') break;	
 
 
-		if(strcmp(username,inuser)==0 && strcmp(password,inpass)==0)
-		{	printf("\n\n\tUsername and password authenticated. Access Granted");
-			printf("\n\n\t            Press any key to continue");
-			getch();
+			if(strcmp(username,inuser)==0 && strcmp(password,inpass)==0)
+			{	printf("\n\n\tUsername and password authenticated. Access Granted");
+				printf("\n\n\t            Press any key to continue");
+				getch();
+				auth = 1;
+				break;
+			}
+			else if(attempts==1)
+			{	system("cls");
+				printf("\n\n\n\tYour are not Authenticated. Access Denied.");
+				system("color f0");
+				getch();
+				exit(0);
+			}
+		}
+		if(auth == 1){
 			break;
 		}
-		else if(attempts==1)
-		{	system("cls");
-			printf("\n\n\n\tYour are not Authenticated. Access Denied.");
-			system("color f0");
-			getch();
-			exit(0);
-		}
-	}
+		userRegister();
+	}while(1);
 }
 //~~~~~~~~~~~~~~~~	2. Introductory Screen Module	~~~~~~~~~~~~~~~~
 void intro()
@@ -714,6 +695,70 @@ void intro()
 		printf("\n\n\t\t\t    SYSTEM");
 		printf("\n\n\n\n\n\n\n\tSubmitted by: ");
 		printf("\n\n\tSubmitted to: Asia Pacific University College of Technology and Innovation " );
+	getch();
+}
+
+void userRegister(){
+	int created = 0;
+	system("cls");
+		int a=0,i;
+	char ch;
+	FILE *fp = '\0';
+
+	char acnos[12], names[30]="iii";
+	do
+	{
+	    system("cls");
+
+		printf("\n\t*************** Register User ************** ");
+		printf("\n\t  User Must Have Account in Bank To Register");
+        printf("\n\t\t\t\t\t\t\t\tESC : Main Menu");
+
+			printf("\n\n\t1.  Account Number (Number Only)\t: ");
+			getinput("acno", ac.acno);
+			if(ac.acno[0]=='\0') break;				//	ESC Key
+			a=search(ac.acno,ac.name);				//Check if Account Exists
+			if(a==0)
+			{
+				printf("\n\n\tAccount Number Does Not Exists");
+				printf("\a");
+				getch();
+				continue;
+			}
+		a = search(acnos,names);
+
+		printf("\n\n\t2.  A/C Holder's Name\t\t\t: ");
+		printf(s[0].name);
+		// getinput("name",ac.name);
+		// if(ac.name[0]=='\0') break;					//ESC Key
+
+        printf("\n\n\t3.  A/C Holder's Surname\t\t: ");
+		printf(s[0].snm);
+		// getinput("name",ac.snm);
+		// if(ac.snm[0]=='\0') break;
+
+		printf("\n\n\t4.  Account Type (S:Saving  C: Current) : ");
+		// getinput("type", ac.type); strupr(ac.type);
+		if(s[0].type[0]=='S') strcpy(s[0].type,"Saving");
+		else strcpy(ac.type,"Current");
+		printf(s[0].type);
+		if(ac.type[0]=='\0') break;				//ESC Key
+
+
+		printf("\n\n\t  Are you sure to create this Account Y/N");
+		ch=getch();
+
+		if(ac.balance[0]=='\0') break;
+		else if (ch=='y'||ch=='Y')
+		{	printf("\n\n\t\t\tAccount Created");
+			fp = fopen(accountfilelocation(),"a");
+			fprintf(fp, "%s %s %s %s %s ", ac.acno, ac.name, ac.snm, ac.type, ac.balance);
+			fclose(fp);
+		}
+		else printf("\n\n\t\t  Account Not Not Created");
+		printf("\n\t  Do you want to create another account Y/N");
+		ch=getch();
+	}while((ch=='Y'||ch=='y')||a>0);
 	getch();
 }
 
@@ -731,6 +776,12 @@ char* transacfilelocation(){
 	char *dir = "./transac.bms";
 	return dir;
 }
+
+char* tempfilelocation(){
+	char * dir = "./temp.bms";
+	return dir;
+}
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //    			END OF PROJECT
 //***************************************************************
